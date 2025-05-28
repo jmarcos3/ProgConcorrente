@@ -7,7 +7,7 @@ import platform
 
 # Inicializa o Pygame
 pygame.init()
-FPS = 30  # Frame rate controlado
+FPS = 10  # Frame rate controlado
 screen = pygame.display.set_mode((500, 500))  # Janela 500x500 para 50x50 células
 pygame.display.set_caption("Tabuleiro Zumbis vs Azuis")
 clock = pygame.time.Clock()
