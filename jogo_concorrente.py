@@ -14,10 +14,13 @@ clock = pygame.time.Clock()
 tabuleiro = [[0 for _ in range(50)] for _ in range(50)]
 lock = threading.Lock()  # Lock para sincronização
 
-# Posições iniciais espaçadas (2 zumbis na metade direita e 10 azuis na metade esquerda)
+# Posições iniciais espaçadas (5 zumbis na metade direita e 10 azuis na metade esquerda)
 # Zumbis (colunas 25 a 49)
 tabuleiro[10][40] = 2  # Zumbi 1
 tabuleiro[40][45] = 2  # Zumbi 2
+tabuleiro[20][35] = 2  # Zumbi 3
+tabuleiro[30][30] = 2  # Zumbi 4
+tabuleiro[45][25] = 2  # Zumbi 5
 
 # Azuis (colunas 0 a 24)
 tabuleiro[5][5] = 1    # Azul 1
@@ -33,7 +36,7 @@ tabuleiro[45][5] = 1   # Azul 10
 
 # Lista de elementos ativos (x, y, valor)
 elementos_ativos = [
-    (10, 40, 2), (40, 45, 2),  # Zumbis
+    (10, 40, 2), (40, 45, 2), (20, 35, 2), (30, 30, 2), (45, 25, 2),  # Zumbis
     (5, 5, 1), (5, 20, 1), (15, 10, 1), (15, 24, 1), (25, 15, 1),
     (25, 5, 1), (35, 10, 1), (35, 20, 1), (45, 15, 1), (45, 5, 1)  # Azuis
 ]
