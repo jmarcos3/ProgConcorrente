@@ -2,6 +2,8 @@ import random
 import threading
 import pygame
 from pygame import gfxdraw
+import asyncio
+import platform
 
 # Inicializa o Pygame
 pygame.init()
@@ -14,32 +16,40 @@ clock = pygame.time.Clock()
 tabuleiro = [[0 for _ in range(50)] for _ in range(50)]
 lock = threading.Lock()  # Lock para sincronização
 
-# Posições iniciais espaçadas (5 zumbis na metade direita e 10 azuis na metade esquerda)
-# Zumbis (colunas 25 a 49)
-tabuleiro[10][40] = 2  # Zumbi 1
-tabuleiro[40][45] = 2  # Zumbi 2
-tabuleiro[20][35] = 2  # Zumbi 3
-tabuleiro[30][30] = 2  # Zumbi 4
-tabuleiro[45][25] = 2  # Zumbi 5
+# Quantidades de azuis e zumbis
+NUM_AZUIS = 10
+NUM_ZUMBIS = 5
 
-# Azuis (colunas 0 a 24)
-tabuleiro[5][5] = 1    # Azul 1
-tabuleiro[5][20] = 1   # Azul 2
-tabuleiro[15][10] = 1  # Azul 3
-tabuleiro[15][24] = 1  # Azul 4
-tabuleiro[25][15] = 1  # Azul 5
-tabuleiro[25][5] = 1   # Azul 6
-tabuleiro[35][10] = 1  # Azul 7
-tabuleiro[35][20] = 1  # Azul 8
-tabuleiro[45][15] = 1  # Azul 9
-tabuleiro[45][5] = 1   # Azul 10
+# Função para gerar posições aleatórias sem sobreposição
+def gerar_posicoes_aleatorias(linhas, colunas_inicio, colunas_fim, quantidade):
+    todas_posicoes = [(i, j) for i in range(linhas[0], linhas[1] + 1) for j in range(colunas_inicio, colunas_fim + 1)]
+    if len(todas_posicoes) < quantidade:
+        raise ValueError("Não há posições suficientes na área para alocar todos os elementos.")
+    return random.sample(todas_posicoes, quantidade)
 
-# Lista de elementos ativos (x, y, valor)
-elementos_ativos = [
-    (10, 40, 2), (40, 45, 2), (20, 35, 2), (30, 30, 2), (45, 25, 2),  # Zumbis
-    (5, 5, 1), (5, 20, 1), (15, 10, 1), (15, 24, 1), (25, 15, 1),
-    (25, 5, 1), (35, 10, 1), (35, 20, 1), (45, 15, 1), (45, 5, 1)  # Azuis
-]
+# Definir áreas e alocar elementos
+def setup():
+    global elementos_ativos
+    # Lista de elementos ativos (x, y, valor)
+    elementos_ativos = []
+
+    # Áreas do tabuleiro
+    area_azuis = (0, 49)    # linhas de 0 a 49
+    area_zumbis = (0, 49)   # linhas de 0 a 49
+
+    # Gerar posições: azuis na metade esquerda (colunas 0 a 24), zumbis na metade direita (colunas 25 a 49)
+    posicoes_azuis = gerar_posicoes_aleatorias(area_azuis, 0, 24, NUM_AZUIS)
+    posicoes_zumbis = gerar_posicoes_aleatorias(area_zumbis, 25, 49, NUM_ZUMBIS)
+
+    # Alocar azuis
+    for pos in posicoes_azuis:
+        tabuleiro[pos[0]][pos[1]] = 1
+        elementos_ativos.append((pos[0], pos[1], 1))
+
+    # Alocar zumbis
+    for pos in posicoes_zumbis:
+        tabuleiro[pos[0]][pos[1]] = 2
+        elementos_ativos.append((pos[0], pos[1], 2))
 
 # Direções possíveis (cima, baixo, esquerda, direita)
 direcoes = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -67,7 +77,6 @@ def verificar_interacao(x, y, elementos_ativos):
             adj_x, adj_y = x + dx, y + dy
             if 0 <= adj_x < 50 and 0 <= adj_y < 50 and tabuleiro[adj_x][adj_y] == 1:
                 tabuleiro[adj_x][adj_y] = 2  # Transforma azul em zumbi
-                # Atualiza a lista de elementos
                 idx = next(i for i, e in enumerate(elementos_ativos) if e[0] == adj_x and e[1] == adj_y)
                 elementos_ativos[idx] = (adj_x, adj_y, 2)
 
@@ -95,7 +104,7 @@ def update_loop():
     for i in range(50):
         for j in range(50):
             color = (200, 200, 200) if tabuleiro[i][j] == 0 else \
-                    (0, 255, 255) if tabuleiro[i][j] == 1 else (0, 100, 0)  # Ciano claro ou Verde escuro (para zumbis)
+                    (0, 255, 255) if tabuleiro[i][j] == 1 else (0, 100, 0)  # Ciano claro ou Verde escuro
             gfxdraw.box(screen, (j * cell_size, i * cell_size, cell_size, cell_size), color)
 
     # Verifica condições de término
@@ -108,7 +117,7 @@ def update_loop():
                 if j == 49:
                     azul_na_direita = True
 
-    # Se um azul chegou à direita, pausa o jogo sem fechar
+    # Se um azul chegou à direita, pausa o jogo
     if azul_na_direita:
         print("Um azul chegou à direita! Jogo pausado, pressione 'q' para sair.")
         while True:
@@ -118,7 +127,7 @@ def update_loop():
             pygame.display.flip()
             clock.tick(FPS)
 
-    # Se não houver mais azuis, pausa o jogo sem fechar
+    # Se não houver mais azuis, pausa o jogo
     if not tem_azul:
         print("Todos são zumbis! Jogo pausado, pressione 'q' para sair.")
         while True:
@@ -132,14 +141,20 @@ def update_loop():
     clock.tick(FPS)
     return True
 
-# Loop principal
-def main():
+# Loop principal compatível com Pyodide
+async def main():
+    setup()  # Inicializa o tabuleiro
     while True:
-        if not update_loop():
+        if not update_loop():  # Atualiza o jogo
             break
+        await asyncio.sleep(1.0 / FPS)  # Controla o frame rate
 
-if __name__ == "__main__":
-    main()
+# Verifica se está rodando no Pyodide (Emscripten) ou localmente
+if platform.system() == "Emscripten":
+    asyncio.ensure_future(main())
+else:
+    if __name__ == "__main__":
+        asyncio.run(main())
 
 # Fecha o Pygame ao terminar
 pygame.quit()
