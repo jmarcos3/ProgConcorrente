@@ -7,7 +7,6 @@ Este projeto é um jogo em um tabuleiro 50x50 onde elementos azuis tentam chegar
 2. Instale o Pygame: abra o terminal e digite `pip install pygame`.
 3. Clone este repositório ou salve o código em um arquivo `.py`.
 4. Execute no terminal: `python jogo_concorrente.py`.
-- Recomendado para melhor desempenho ou uso offline.
 
 ## Sobre o Código
 O jogo usa **programação concorrente** com **threads** para simular movimentos simultâneos:
